@@ -3,16 +3,17 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "udp.h"
-
+#include "request_handlers.h"
+#include "shared_structs.h"
+//start of linked list
 typedef struct {
     int sd;
-} listener_args_t;
+    struct sockaddr_in client_addr;
+    char type[32];
+    char request[BUFFER_SIZE];
+} service_args_t;
 
-typedef struct client_info {
-    char name[64];
-    struct sockaddr_in addr;
-    struct client_info *next;
-} client_info_t;
+client_info_t *client_list_head = NULL;
 
 void pthread_create_w(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)
 {
@@ -32,64 +33,71 @@ void pthread_join_w(pthread_t thread, void **retval)
     }
 }
 
-void *listener_thread(void *arg, ) 
-{
+void *listener_thread(void *arg) {
         int sd = udp_socket_open(SERVER_PORT);
-
         assert(sd > -1);
-
-        // Server main loop
-        while (1) 
-        {
+        // listener thread main loop
+        while (1){ 
             // Storage for request and response messages
-            char client_request[BUFFER_SIZE], server_response[BUFFER_SIZE];
-
-            // Demo code (remove later)
-            printf("Server is listening on port %d\n", SERVER_PORT);
-
+            char client_request[BUFFER_SIZE];
             // Variable to store incoming client's IP address and port
             struct sockaddr_in client_address;
-        
-            // This function reads incoming client request from
-            // the socket at sd.
-            // (See details of the function in udp.h)
             int rc = udp_socket_read(sd, &client_address, client_request, BUFFER_SIZE);
-
-            // Successfully received an incoming request
-            if (rc > 0)
-            {
-                // Demo code (remove later)
-                strcpy(server_response, "Hi, the server has received: ");
-                strcat(server_response, client_request);
-                strcat(server_response, "\n");
-
-                // This function writes back to the incoming client,
-                // whose address is now available in client_address, 
-                // through the socket at sd.
-                // (See details of the function in udp.h)
-                rc = udp_socket_write(sd, &client_address, server_response, BUFFER_SIZE);
-
-                // Demo code (remove later)
-                printf("Request served...\n");
+            if (rc > 0){
+                char *type = strtok(client_request, "$");
+                char *content = strtok(NULL, "$");
+                service_args_t *args = malloc(sizeof(service_args_t));
+                args->sd = sd;
+                args->client_addr = client_address;
+                strcpy(args->type, type);
+                strcpy(args->request, content);
+                pthread_t service;
+                pthread_create_w(&service, NULL, service_thread, args);
+                // rc = udp_socket_write(sd, &client_address, server_response, BUFFER_SIZE);
+                pthread_detach(service);
             }
-       
         }    
-    
 }
 
 void *service_thread(void *arg){
-    
+    service_args_t* args = (service_args_t*)arg;
+    if (strcmp(args->type, "conn") == 0) {
+        conn(args->sd, &args->client_addr,args->request);
+    }
+    if (strcmp(args->type, "say") == 0) {
+        say(args->sd, &args->client_addr,args->request);
+    }
+    if (strcmp(args->type, "sayto") == 0) {
+        sayto(args->sd, &args->client_addr,args->request);
+    }
+    if (strcmp(args->type, "disconn") == 0) {
+        
+    }
+    if (strcmp(args->type, "mute") == 0) {
+        
+    }
+    if (strcmp(args->type, "unmute") == 0) {
+        
+    }
+    if (strcmp(args->type, "rename") == 0) {
+        
+    }
+    if (strcmp(args->type, "kick") == 0) {
+        
+    }
+
 }
 
 int main(int argc, char *argv[])
 {
-
-
+    pthread_t listener;
+    pthread_create_w(&listener, NULL, listener_thread, NULL);
     // This function opens a UDP socket,
     // binding it to all IP interfaces of this machine,
     // and port number SERVER_PORT
     // (See details of the function in udp.h)
     
+    pthread_join(listener, NULL);
 
     return 0;
 }
