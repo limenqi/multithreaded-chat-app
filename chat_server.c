@@ -71,21 +71,22 @@ void *service_thread(void *arg){
         sayto(args->sd, &args->client_addr,args->request);
     }
     if (strcmp(args->type, "disconn") == 0) {
-        
+        disconn(args->sd, &args->client_addr);
     }
     if (strcmp(args->type, "mute") == 0) {
-        
+        mute(args->sd, &args->client_addr, args->request);
     }
     if (strcmp(args->type, "unmute") == 0) {
-        
+        unmute(args->sd, &args->client_addr, args->request);
     }
     if (strcmp(args->type, "rename") == 0) {
-        
+        rename_client(args->sd, &args->client_addr, args->request);
     }
     if (strcmp(args->type, "kick") == 0) {
-        
+        kick(args->sd, &args->client_addr, args->request);    
     }
-
+    free(args);
+    return NULL;
 }
 
 int main(int argc, char *argv[])

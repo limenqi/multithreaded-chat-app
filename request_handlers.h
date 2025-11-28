@@ -10,6 +10,5 @@ void disconn(int sd, struct sockaddr_in *client_addr);
 void mute(int sd, struct sockaddr_in *client_addr, const char *target);
 void unmute(int sd, struct sockaddr_in *client_addr, const char *target);
 void rename(int sd, struct sockaddr_in *client_addr, const char *newname);
-void kick(int sd, const char *target);
-
+void kick(int sd, struct sockaddr_in *client_addr, const char *target);
 #endif

@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "in.h": "c",
+        "shared_structs.h": "c",
+        "request_handlers.h": "c"
+    }
+}
