@@ -2,16 +2,15 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include "udp.h"
+#include <assert.h>
 #include "request_handlers.h"
 #include "shared_structs.h"
 //start of linked list
-typedef struct {
-    int sd;
-    struct sockaddr_in client_addr;
-    char type[32];
-    char request[BUFFER_SIZE];
-} service_args_t;
+
+int udp_socket_open(int port);
+int udp_socket_read(int sd, struct sockaddr_in *addr, char *buffer, int n);
+int udp_socket_write(int sd, struct sockaddr_in *addr, char *buffer, int n);
+int set_socket_addr(struct sockaddr_in *addr, const char *host, int port);
 
 client_info_t *client_list_head = NULL;
 
@@ -31,32 +30,6 @@ void pthread_join_w(pthread_t thread, void **retval)
         fprintf(stderr, "pthread_join failed: %s\n", strerror(rc));
         exit(EXIT_FAILURE);
     }
-}
-
-void *listener_thread(void *arg) {
-        int sd = udp_socket_open(SERVER_PORT);
-        assert(sd > -1);
-        // listener thread main loop
-        while (1){ 
-            // Storage for request and response messages
-            char client_request[BUFFER_SIZE];
-            // Variable to store incoming client's IP address and port
-            struct sockaddr_in client_address;
-            int rc = udp_socket_read(sd, &client_address, client_request, BUFFER_SIZE);
-            if (rc > 0){
-                char *type = strtok(client_request, "$");
-                char *content = strtok(NULL, "$");
-                service_args_t *args = malloc(sizeof(service_args_t));
-                args->sd = sd;
-                args->client_addr = client_address;
-                strcpy(args->type, type);
-                strcpy(args->request, content);
-                pthread_t service;
-                pthread_create_w(&service, NULL, service_thread, args);
-                // rc = udp_socket_write(sd, &client_address, server_response, BUFFER_SIZE);
-                pthread_detach(service);
-            }
-        }    
 }
 
 void *service_thread(void *arg){
@@ -88,6 +61,33 @@ void *service_thread(void *arg){
     free(args);
     return NULL;
 }
+
+void *listener_thread(void *arg) {
+        int sd = udp_socket_open(SERVER_PORT);
+        assert(sd > -1);
+        // listener thread main loop
+        while (1){ 
+            // Storage for request and response messages
+            char client_request[BUFFER_SIZE];
+            // Variable to store incoming client's IP address and port
+            struct sockaddr_in client_address;
+            int rc = udp_socket_read(sd, &client_address, client_request, BUFFER_SIZE);
+            if (rc > 0){
+                char *type = strtok(client_request, "$");
+                char *content = strtok(NULL, "$");
+                service_args_t *args = malloc(sizeof(service_args_t));
+                args->sd = sd;
+                args->client_addr = client_address;
+                strcpy(args->type, type);
+                strcpy(args->request, content);
+                pthread_t service;
+                pthread_create_w(&service, NULL, service_thread, args);
+                // rc = udp_socket_write(sd, &client_address, server_response, BUFFER_SIZE);
+                pthread_detach(service);
+            }
+        }    
+}
+
 
 int main(int argc, char *argv[])
 {

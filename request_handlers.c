@@ -64,7 +64,7 @@ void say(int sd, struct sockaddr_in *client_addr, const char *message) {
     strcat(reply, message);
     client_info_t* receiver = client_list_head;
     while (receiver != NULL) {
-        if (!is_muted(receiver, sender->name)) {
+        if (!check_muted(receiver, sender->name)) {
             udp_socket_write(sd, &receiver->addr, reply, BUFFER_SIZE);
         }
         receiver = receiver->next;
@@ -90,7 +90,7 @@ void sayto(int sd, struct sockaddr_in *client_addr, const char *content) {
     strcpy(reply, sender->name);
     strcat(reply, ": ");
     strcat(reply, message);
-    if (is_muted(receiver, sender->name)) {
+    if (check_muted(receiver, sender->name)) {
         return;  // receiver muted sender
     }
     udp_socket_write(sd, &receiver->addr, reply, BUFFER_SIZE);
