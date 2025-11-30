@@ -40,7 +40,11 @@ void *sender_thread(void *arg)
     sender_args_t *args = (sender_args_t *)arg;
     while(fgets(client_request, BUFFER_SIZE, stdin) != NULL) {
         // Send the input line to the server
-        udp_socket_write(args->sd, &args->server_addr, client_request, BUFFER_SIZE);
+        // if user typed only enter or blank, ignore it
+    if (client_request[0] == '\n' || client_request[0] == '\0'){
+        continue;
+    }
+    udp_socket_write(args->sd, &args->server_addr, client_request, BUFFER_SIZE);
     }
     return NULL;
 }
@@ -50,8 +54,10 @@ void *listener_thread(void *arg)
     struct sockaddr_in responder_addr;
     char server_response[BUFFER_SIZE];
     while(1){
+        memset(server_response, 0, BUFFER_SIZE);
         int rc = udp_socket_read(((listener_args_t *)arg)->sd, &responder_addr, server_response, BUFFER_SIZE);
         if (rc > 0) {
+            server_response[rc] = '\0';
             printf("Received from server: %s", server_response);
         }
     }

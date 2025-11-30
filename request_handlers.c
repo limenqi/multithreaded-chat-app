@@ -48,7 +48,7 @@ void conn(int sd, struct sockaddr_in *client_addr, const char *name) {
     char reply[BUFFER_SIZE];
     strcpy(reply, "Hi ");
     strcat(reply, new_client->name);
-    strcat(reply, ", you have successfully connected to the chat!");
+    strcat(reply, ", you have successfully connected to the chat!\n");
     udp_socket_write(sd, &new_client->addr, reply, BUFFER_SIZE);        
 }
 
@@ -106,7 +106,7 @@ void disconn(int sd, struct sockaddr_in *client_addr) {
         cur->addr.sin_addr.s_addr==client_addr->sin_addr.s_addr){
             client_list_head=cur->next;
             char reply[BUFFER_SIZE];
-            strcpy(reply, "You have disconnected.");
+            strcpy(reply, "You have disconnected.\n");
             udp_socket_write(sd, &cur->addr, reply, BUFFER_SIZE);
             free(cur);
             return;
@@ -118,7 +118,7 @@ void disconn(int sd, struct sockaddr_in *client_addr) {
             cur->next=cur->next->next;
             found_name=1;
             char reply[BUFFER_SIZE];
-            strcpy(reply, "You have disconnected.");
+            strcpy(reply, "You have disconnected.\n");
             udp_socket_write(sd, &delete->addr, reply, BUFFER_SIZE);
             free(delete);                       
             return;
@@ -138,7 +138,7 @@ void mute(int sd, struct sockaddr_in *client_addr, const char *target) {
     if(to_mute==NULL){
         char reply[BUFFER_SIZE];
         strcpy(reply, target);
-        strcat(reply, " not found.");
+        strcat(reply, " not found.\n");
         udp_socket_write(sd, &sender->addr, reply, BUFFER_SIZE);        
         return;
     }
@@ -147,7 +147,7 @@ void mute(int sd, struct sockaddr_in *client_addr, const char *target) {
     while (cur) {
         if (strcmp(cur->name, target) == 0) {
             char reply[BUFFER_SIZE];
-            strcpy(reply, "target already muted");
+            strcpy(reply, "target already muted\n");
             udp_socket_write(sd, &sender->addr, reply, BUFFER_SIZE);
             return;
         }
@@ -185,6 +185,7 @@ void rename_client(int sd, struct sockaddr_in *client_addr, const char *newname)
     char reply[BUFFER_SIZE];
     strcpy(reply, "You are now known as ");
     strcat(reply, newname);
+    strcat(reply, "\n");
     udp_socket_write(sd, &client->addr, reply, BUFFER_SIZE);
 
 }
@@ -199,7 +200,7 @@ void kick(int sd, struct sockaddr_in *client_addr, const char *target) {
     if (cur == to_kick) {
         client_list_head = cur->next;
         char msg[BUFFER_SIZE];
-        strcpy(msg, "You have been kicked.");
+        strcpy(msg, "You have been kicked.\n");
         udp_socket_write(sd, &to_kick->addr, msg, BUFFER_SIZE);
 
         // free mute list
@@ -218,7 +219,7 @@ void kick(int sd, struct sockaddr_in *client_addr, const char *target) {
             cur->next = to_kick->next;
             // tell kicked user
             char msg[BUFFER_SIZE];
-            strcpy(msg, "You have been kicked.");
+            strcpy(msg, "You have been kicked.\n");
             udp_socket_write(sd, &to_kick->addr, msg, BUFFER_SIZE);
 
             // free mute list

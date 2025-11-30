@@ -5,7 +5,7 @@
 #include <assert.h>
 #include "request_handlers.h"
 #include "shared_structs.h"
-//start of linked list
+//To compile this file, run "gcc chat_server.c request_handlers.c -o chat_server -lpthread"
 
 int udp_socket_open(int port);
 int udp_socket_read(int sd, struct sockaddr_in *addr, char *buffer, int n);
@@ -73,8 +73,16 @@ void *listener_thread(void *arg) {
             struct sockaddr_in client_address;
             int rc = udp_socket_read(sd, &client_address, client_request, BUFFER_SIZE);
             if (rc > 0){
+                client_request[strcspn(client_request, "\n")] = '\0';
                 char *type = strtok(client_request, "$");
                 char *content = strtok(NULL, "$");
+                if (type == NULL || content == NULL) {
+                    perror("invalid request format");
+                    continue;
+                }
+                if(content==NULL){
+                    content="";
+                }
                 service_args_t *args = malloc(sizeof(service_args_t));
                 args->sd = sd;
                 args->client_addr = client_address;
