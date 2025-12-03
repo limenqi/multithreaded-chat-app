@@ -1,0 +1,33 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     chat_server_tsan
+relocations:
+  - { offset: 0x26, size: 0x8, addend: 0x0, symName: _pthread_create_w, symObjAddr: 0x0, symBinAddr: 0x100001EB4, symSize: 0x9C }
+  - { offset: 0x3F, size: 0x8, addend: 0x0, symName: _client_list_head, symObjAddr: 0x3440, symBinAddr: 0x1000080C8, symSize: 0x0 }
+  - { offset: 0x1B7, size: 0x8, addend: 0x0, symName: _client_list_lock, symObjAddr: 0x518, symBinAddr: 0x100008000, symSize: 0x0 }
+  - { offset: 0x276, size: 0x8, addend: 0x0, symName: _pthread_create_w, symObjAddr: 0x0, symBinAddr: 0x100001EB4, symSize: 0x9C }
+  - { offset: 0x308, size: 0x8, addend: 0x0, symName: _pthread_join_w, symObjAddr: 0x9C, symBinAddr: 0x100001F50, symSize: 0x84 }
+  - { offset: 0x669, size: 0x8, addend: 0x0, symName: _pthread_join_w, symObjAddr: 0x9C, symBinAddr: 0x100001F50, symSize: 0x84 }
+  - { offset: 0x6F1, size: 0x8, addend: 0x0, symName: _service_thread, symObjAddr: 0x120, symBinAddr: 0x100001FD4, symSize: 0x194 }
+  - { offset: 0x721, size: 0x8, addend: 0x0, symName: _service_thread, symObjAddr: 0x120, symBinAddr: 0x100001FD4, symSize: 0x194 }
+  - { offset: 0x9C1, size: 0x8, addend: 0x0, symName: _listener_thread, symObjAddr: 0x2B4, symBinAddr: 0x100002168, symSize: 0x1A0 }
+  - { offset: 0xC06, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x454, symBinAddr: 0x100002308, symSize: 0xB0 }
+  - { offset: 0xCF8, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x454, symBinAddr: 0x100002308, symSize: 0xB0 }
+  - { offset: 0xDE8, size: 0x8, addend: 0x0, symName: _tsan.module_ctor, symObjAddr: 0x504, symBinAddr: 0x1000023B8, symSize: 0x14 }
+  - { offset: 0xE9A, size: 0x8, addend: 0x0, symName: _set_socket_addr, symObjAddr: 0x0, symBinAddr: 0x1000023CC, symSize: 0xA8 }
+  - { offset: 0xF2E, size: 0x8, addend: 0x0, symName: _set_socket_addr, symObjAddr: 0x0, symBinAddr: 0x1000023CC, symSize: 0xA8 }
+  - { offset: 0x106A, size: 0x8, addend: 0x0, symName: _udp_socket_open, symObjAddr: 0xA8, symBinAddr: 0x100002474, symSize: 0xD4 }
+  - { offset: 0x1175, size: 0x8, addend: 0x0, symName: _udp_socket_read, symObjAddr: 0x17C, symBinAddr: 0x100002548, symSize: 0x7C }
+  - { offset: 0x127D, size: 0x8, addend: 0x0, symName: _udp_socket_write, symObjAddr: 0x1F8, symBinAddr: 0x1000025C4, symSize: 0x64 }
+  - { offset: 0x131D, size: 0x8, addend: 0x0, symName: _find_client_by_addr, symObjAddr: 0x25C, symBinAddr: 0x100002628, symSize: 0xA4 }
+  - { offset: 0x1343, size: 0x8, addend: 0x0, symName: _find_client_by_name, symObjAddr: 0x300, symBinAddr: 0x1000026CC, symSize: 0x68 }
+  - { offset: 0x1399, size: 0x8, addend: 0x0, symName: _check_muted, symObjAddr: 0x368, symBinAddr: 0x100002734, symSize: 0x70 }
+  - { offset: 0x142B, size: 0x8, addend: 0x0, symName: _conn, symObjAddr: 0x3D8, symBinAddr: 0x1000027A4, symSize: 0x154 }
+  - { offset: 0x1736, size: 0x8, addend: 0x0, symName: _say, symObjAddr: 0x52C, symBinAddr: 0x1000028F8, symSize: 0x1BC }
+  - { offset: 0x1927, size: 0x8, addend: 0x0, symName: _sayto, symObjAddr: 0x6E8, symBinAddr: 0x100002AB4, symSize: 0x22C }
+  - { offset: 0x1BD9, size: 0x8, addend: 0x0, symName: _disconn, symObjAddr: 0x914, symBinAddr: 0x100002CE0, symSize: 0x224 }
+  - { offset: 0x1D8A, size: 0x8, addend: 0x0, symName: _mute, symObjAddr: 0xB38, symBinAddr: 0x100002F04, symSize: 0x208 }
+  - { offset: 0x1F7A, size: 0x8, addend: 0x0, symName: _unmute, symObjAddr: 0xD40, symBinAddr: 0x10000310C, symSize: 0x15C }
+  - { offset: 0x207B, size: 0x8, addend: 0x0, symName: _rename_client, symObjAddr: 0xE9C, symBinAddr: 0x100003268, symSize: 0x198 }
+  - { offset: 0x2207, size: 0x8, addend: 0x0, symName: _kick, symObjAddr: 0x1034, symBinAddr: 0x100003400, symSize: 0x228 }
+...

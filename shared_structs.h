@@ -5,6 +5,7 @@
 #define BUFFER_SIZE 1024
 #define SERVER_PORT 12000
 #include <netinet/in.h>
+#include <pthread.h>
 
 typedef struct mute_target{
     char name[64];
@@ -25,5 +26,6 @@ typedef struct {
 } service_args_t;
 
 extern client_info_t *client_list_head;
+extern pthread_rwlock_t client_list_lock;
 
 #endif

@@ -12,7 +12,8 @@ int udp_socket_read(int sd, struct sockaddr_in *addr, char *buffer, int n);
 int udp_socket_write(int sd, struct sockaddr_in *addr, char *buffer, int n);
 int set_socket_addr(struct sockaddr_in *addr, const char *host, int port);
 
-client_info_t *client_list_head = NULL;
+client_info_t *client_list_head = NULL; 
+pthread_rwlock_t client_list_lock = PTHREAD_RWLOCK_INITIALIZER;
 
 void pthread_create_w(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)
 {
@@ -76,7 +77,7 @@ void *listener_thread(void *arg) {
                 client_request[strcspn(client_request, "\n")] = '\0';
                 char *type = strtok(client_request, "$");
                 char *content = strtok(NULL, "$");
-                if (type == NULL || content == NULL) {
+                if (type == NULL) {
                     perror("invalid request format");
                     continue;
                 }
@@ -99,8 +100,11 @@ void *listener_thread(void *arg) {
 
 int main(int argc, char *argv[])
 {
+    pthread_rwlock_init (&client_list_lock, NULL);
+    
     pthread_t listener;
     pthread_create_w(&listener, NULL, listener_thread, NULL);
+    
     // This function opens a UDP socket,
     // binding it to all IP interfaces of this machine,
     // and port number SERVER_PORT

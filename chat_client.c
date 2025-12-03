@@ -44,7 +44,7 @@ void *sender_thread(void *arg)
     if (client_request[0] == '\n' || client_request[0] == '\0'){
         continue;
     }
-    udp_socket_write(args->sd, &args->server_addr, client_request, BUFFER_SIZE);
+    udp_socket_write(args->sd, &args->server_addr, client_request, strlen(client_request));
     }
     return NULL;
 }
@@ -58,10 +58,16 @@ void *listener_thread(void *arg)
         int rc = udp_socket_read(((listener_args_t *)arg)->sd, &responder_addr, server_response, BUFFER_SIZE);
         if (rc > 0) {
             server_response[rc] = '\0';
-            printf("Received from server: %s", server_response);
+            printf("%s", server_response);
+
+            if (strstr(server_response, "You have disconnected") != NULL ||
+                strstr(server_response, "You have been kicked") != NULL) {
+
+                printf("Client exiting...\n");
+                exit(0);
+            }
         }
     }
-    
 }
 // client code
 int main(int argc, char *argv[])
@@ -83,8 +89,7 @@ int main(int argc, char *argv[])
     pthread_create_w(&listener, NULL, listener_thread, (void *)&listen_args);
 
     pthread_join(sender, NULL);
-    pthread_join(listener, NULL);
-    
+    pthread_detach(listener);
     
     return 0;
 }
