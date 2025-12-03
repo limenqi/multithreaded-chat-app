@@ -3,64 +3,60 @@ import threading
 import random
 import time
 
-SERVER_IP = "127.0.0.1"
-SERVER_PORT = 12000
+SERVER_ADDR = ("127.0.0.1", 5000)
+NUM_CLIENTS = 50          # Increase to 200+ for heavy testing
+COMMANDS_PER_CLIENT = 20
 
-# commands that clients randomly send
-COMMANDS = [
-    "say$ hello",
-    "say$ test message",
-    "say$ spam",
-    "rename$ UserX",
-    "mute$ Alice",
-    "unmute$ Alice",
-]
-
-def client_thread(id):
+def client_thread(client_id):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.bind(("", 0))  # random client port
+    name = f"user{client_id}"
 
-    name = f"User{id}"
-    s.sendto(f"conn${name}".encode(), (SERVER_IP, SERVER_PORT))
+    # 1. Always CONNECT first
+    connect_msg = f"conn${name}".encode()
+    s.sendto(connect_msg, SERVER_ADDR)
 
-    for _ in range(200):
-        cmd = random.choice(COMMANDS)
+    # 2. Wait a bit so server can register this client
+    time.sleep(0.01)
 
-        # random target for sayto
-        if random.random() < 0.2:
-            target = f"User{random.randint(0, 19)}"
-            cmd = f"sayto${target} hi"
+    # 3. Now send commands
+    for _ in range(COMMANDS_PER_CLIENT):
+        cmd_type = random.choice(["say", "say", "sayto", "mute", "unmute", "rename"])
 
-        s.sendto(cmd.encode(), (SERVER_IP, SERVER_PORT))
+        if cmd_type == "say":
+            msg = f"say$Hello_from_{name}"
+        elif cmd_type == "sayto":
+            msg = f"sayto$user{random.randint(0, NUM_CLIENTS-1)}$Hello"
+        elif cmd_type == "mute":
+            msg = f"mute$user{random.randint(0, NUM_CLIENTS-1)}"
+        elif cmd_type == "unmute":
+            msg = f"unmute$user{random.randint(0, NUM_CLIENTS-1)}"
+        elif cmd_type == "rename":
+            new_name = f"user{client_id}_renamed"
+            msg = f"rename${new_name}"
+        else:
+            msg = "bad$cmd"
 
-        # read responses non-blocking
-        s.settimeout(0.01)
-        try:
-            data, _ = s.recvfrom(1024)
-            # print(f"{name} <- {data.decode().strip()}")
-        except:
-            pass
+        s.sendto(msg.encode(), SERVER_ADDR)
 
+        # Slight delay to spread load
+        time.sleep(random.uniform(0.001, 0.005))
 
-    # finally disconnect
-    s.sendto(f"disconn$".encode(), (SERVER_IP, SERVER_PORT))
-
+    # 4. Disconnect cleanly
+    s.sendto(f"bye${name}".encode(), SERVER_ADDR)
+    s.close()
 
 def main():
-    NUM_CLIENTS = 20   # increase to 50 or 100 for heavier testing
     threads = []
-
     for i in range(NUM_CLIENTS):
         t = threading.Thread(target=client_thread, args=(i,))
         t.start()
         threads.append(t)
-        time.sleep(0.03)
+        time.sleep(0.005)  # Stagger connections
 
     for t in threads:
         t.join()
 
     print("Stress test complete.")
-
 
 if __name__ == "__main__":
     main()
