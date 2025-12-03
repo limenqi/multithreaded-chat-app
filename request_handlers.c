@@ -279,7 +279,7 @@ void rename_client(int sd, struct sockaddr_in *client_addr, const char *newname)
     pthread_rwlock_unlock(&client_list_lock);  
     
     char reply[BUFFER_SIZE];
-    strcpy(reply, "You are now known as");
+    strcpy(reply, "You are now known as ");
     strcat(reply, newname);
     strcat(reply, "\n");
     udp_socket_write(sd, &addr_copy, reply, BUFFER_SIZE);
