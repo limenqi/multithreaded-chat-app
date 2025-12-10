@@ -38,25 +38,25 @@ void *service_thread(void *arg){
     if (strcmp(args->type, "conn") == 0) {
         conn(args->sd, &args->client_addr,args->request);
     }
-    if (strcmp(args->type, "say") == 0) {
+    else if (strcmp(args->type, "say") == 0) {
         say(args->sd, &args->client_addr,args->request);
     }
-    if (strcmp(args->type, "sayto") == 0) {
+    else if (strcmp(args->type, "sayto") == 0) {
         sayto(args->sd, &args->client_addr,args->request);
     }
-    if (strcmp(args->type, "disconn") == 0) {
+    else if (strcmp(args->type, "disconn") == 0) {
         disconn(args->sd, &args->client_addr);
     }
-    if (strcmp(args->type, "mute") == 0) {
+    else if (strcmp(args->type, "mute") == 0) {
         mute(args->sd, &args->client_addr, args->request);
     }
-    if (strcmp(args->type, "unmute") == 0) {
+    else if (strcmp(args->type, "unmute") == 0) {
         unmute(args->sd, &args->client_addr, args->request);
     }
-    if (strcmp(args->type, "rename") == 0) {
+    else if (strcmp(args->type, "rename") == 0) {
         rename_client(args->sd, &args->client_addr, args->request);
     }
-    if (strcmp(args->type, "kick") == 0) {
+    else if (strcmp(args->type, "kick") == 0) {
         kick(args->sd, &args->client_addr, args->request);    
     }
     free(args);
@@ -89,6 +89,7 @@ void *listener_thread(void *arg) {
                 args->client_addr = client_address;
                 strcpy(args->type, type);
                 strcpy(args->request, content);
+                
                 pthread_t service;
                 pthread_create_w(&service, NULL, service_thread, args);
                 // rc = udp_socket_write(sd, &client_address, server_response, BUFFER_SIZE);
