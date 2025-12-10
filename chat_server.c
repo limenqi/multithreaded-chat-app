@@ -14,6 +14,11 @@ int set_socket_addr(struct sockaddr_in *addr, const char *host, int port);
 
 client_info_t *client_list_head = NULL; 
 pthread_rwlock_t client_list_lock = PTHREAD_RWLOCK_INITIALIZER;
+history_buffer_t history = {
+    .start = 0,
+    .count = 0,
+    .lock = PTHREAD_MUTEX_INITIALIZER
+};
 
 void pthread_create_w(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)
 {

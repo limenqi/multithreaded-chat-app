@@ -4,6 +4,8 @@
 
 #define BUFFER_SIZE 1024
 #define SERVER_PORT 12000
+
+#define HISTORY_SIZE 15
 #include <netinet/in.h>
 #include <pthread.h>
 
@@ -28,4 +30,12 @@ typedef struct {
 extern client_info_t *client_list_head;
 extern pthread_rwlock_t client_list_lock;
 
+typedef struct{
+    char messages[HISTORY_SIZE][BUFFER_SIZE];
+    int start;
+    int count;
+    pthread_mutex_t lock;
+} history_buffer_t;
+
+extern history_buffer_t history;
 #endif

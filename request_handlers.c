@@ -39,6 +39,22 @@ int check_muted(client_info_t *receiver, const char *sender_name) {
     return 0;   
 }
 
+void add_to_history(const char *msg) {
+    pthread_mutex_lock(&history.lock);
+
+    int index = (history.start + history.count) % HISTORY_SIZE;
+    strncpy(history.messages[index], msg, BUFFER_SIZE - 1);
+    history.messages[index][BUFFER_SIZE - 1] = '\0';
+
+    if (history.count < HISTORY_SIZE) {
+        history.count++;
+    } else {
+        history.start = (history.start + 1) % HISTORY_SIZE;
+    }
+
+    pthread_mutex_unlock(&history.lock);
+}
+
 void conn(int sd, struct sockaddr_in *client_addr, const char *name) {
     pthread_rwlock_wrlock(&client_list_lock);
     
@@ -57,7 +73,15 @@ void conn(int sd, struct sockaddr_in *client_addr, const char *name) {
     strcpy(reply, "Hi ");
     strcat(reply, name);
     strcat(reply, ", you have successfully connected to the chat!\n");
-    udp_socket_write(sd, &addr_copy, reply, strlen(reply));        
+    udp_socket_write(sd, &addr_copy, reply, strlen(reply));  
+    
+    pthread_mutex_lock(&history.lock);
+    for (int i = 0; i < history.count; i++) {
+        int index = (history.start + i) % HISTORY_SIZE;
+        udp_socket_write(sd, &addr_copy, history.messages[index], strlen(history.messages[index]));
+    }
+
+    pthread_mutex_unlock(&history.lock);
 }
 
 void say(int sd, struct sockaddr_in *client_addr, const char *message) {
@@ -75,6 +99,8 @@ void say(int sd, struct sockaddr_in *client_addr, const char *message) {
     strcat(reply, ": ");
     strcat(reply, message);
     
+    add_to_history(reply);
+
     client_info_t* receiver = client_list_head;
     while (receiver != NULL) {
         // send to all clients except sender and those who muted sender
@@ -127,7 +153,6 @@ void sayto(int sd, struct sockaddr_in *client_addr, const char *content) {
     strcpy(reply, sender->name);
     strcat(reply, ": ");
     strcat(reply, message);
-    
     udp_socket_write(sd, &receiver->addr, reply, strlen(reply)); 
 
     pthread_rwlock_unlock(&client_list_lock);
