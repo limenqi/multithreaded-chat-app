@@ -11,4 +11,5 @@ void mute(int sd, struct sockaddr_in *client_addr, const char *target);
 void unmute(int sd, struct sockaddr_in *client_addr, const char *target);
 void rename_client(int sd, struct sockaddr_in *client_addr, const char *newname);
 void kick(int sd, struct sockaddr_in *client_addr, const char *target);
+void ret_ping(int sd, struct sockaddr_in *client_addr);
 #endif

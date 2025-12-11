@@ -64,6 +64,10 @@ void conn(int sd, struct sockaddr_in *client_addr, const char *name) {
     new_client->next = client_list_head;
     new_client->muted = NULL;
     client_list_head = new_client;
+    new_client->last_active = time(NULL);   // NEW
+    new_client->prev_active = NULL;         // (not used, but safe)
+    new_client->next_active = NULL;
+
 
     struct sockaddr_in addr_copy = new_client->addr;
 
@@ -376,4 +380,27 @@ void kick(int sd, struct sockaddr_in *client_addr, const char *target) {
     }
 
     pthread_rwlock_unlock(&client_list_lock);
+}
+
+void ret_ping(int sd, struct sockaddr_in *client_addr) {
+    // update last_active timestamp
+    time_t now = time(NULL);
+
+    pthread_rwlock_wrlock(&client_list_lock);
+
+    client_info_t *cur = client_list_head;
+    while (cur != NULL) {
+        if (ntohs(cur->addr.sin_port) == ntohs(client_addr->sin_port) &&
+            cur->addr.sin_addr.s_addr == client_addr->sin_addr.s_addr) {
+
+            cur->last_active = now;
+            break;
+        }
+        cur = cur->next;
+    }
+
+    pthread_rwlock_unlock(&client_list_lock);
+
+    char msg[] = "[Server]: Activity refreshed. You are still connected.\n";
+    udp_socket_write(sd, client_addr, msg, strlen(msg));
 }
