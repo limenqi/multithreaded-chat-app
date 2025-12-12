@@ -110,9 +110,10 @@ void conn(int sd, struct sockaddr_in *client_addr, const char *name) {
     new_client->next = client_list_head;
     new_client->muted = NULL;
     client_list_head = new_client;
-    new_client->last_active = time(NULL);   // NEW
-    new_client->prev_active = NULL;         // (not used, but safe)
+    new_client->last_active = time(NULL);  
+    new_client->prev_active = NULL;         
     new_client->next_active = NULL;
+    new_client->was_pinged = 0;
 
 
     struct sockaddr_in addr_copy = new_client->addr;

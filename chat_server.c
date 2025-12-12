@@ -9,7 +9,7 @@
 #include "shared_structs.h"
 //To compile this file, run "gcc chat_server.c request_handlers.c -o chat_server -lpthread"
 
-#define INACTIVITY_THRESHOLD 30 // 5 minutes
+#define INACTIVITY_THRESHOLD 300 // 5 minutes
 #define PING_TIMEOUT 30 
 
 int udp_socket_open(int port);
