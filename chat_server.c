@@ -9,8 +9,8 @@
 #include "shared_structs.h"
 //To compile this file, run "gcc chat_server.c request_handlers.c -o chat_server -lpthread"
 
-#define INACTIVITY_THRESHOLD 10
-#define PING_TIMEOUT 5
+#define INACTIVITY_THRESHOLD 300 // 5 minutes
+#define PING_TIMEOUT 30 
 
 int udp_socket_open(int port);
 int udp_socket_read(int sd, struct sockaddr_in *addr, char *buffer, int n);
@@ -169,7 +169,6 @@ void *listener_thread(void *arg) {
                 
                 pthread_t service;
                 pthread_create_w(&service, NULL, service_thread, args);
-                // rc = udp_socket_write(sd, &client_address, server_response, BUFFER_SIZE);
                 pthread_detach(service);
             }
         }    

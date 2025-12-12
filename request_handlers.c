@@ -58,6 +58,17 @@ void add_to_history(const char *msg) {
 void conn(int sd, struct sockaddr_in *client_addr, const char *name) {
     pthread_rwlock_wrlock(&client_list_lock);
     
+    if (find_client_by_name(name) != NULL) {
+        pthread_rwlock_unlock(&client_list_lock);
+
+        char reply[BUFFER_SIZE];
+        snprintf(reply, BUFFER_SIZE,
+                 "Name '%s' is already in use. Please choose another name.\n",
+                 name);
+        udp_socket_write(sd, client_addr, reply, strlen(reply));
+        return;
+    }    
+
     client_info_t *new_client = malloc(sizeof(client_info_t));
     strcpy(new_client->name, name);
     new_client->addr = *client_addr;
@@ -295,7 +306,17 @@ void unmute(int sd, struct sockaddr_in *client_addr, const char *target) {
 
 void rename_client(int sd, struct sockaddr_in *client_addr, const char *newname) {
     pthread_rwlock_wrlock(&client_list_lock);
-    
+   
+    if (find_client_by_name(newname) != NULL) {
+        pthread_rwlock_unlock(&client_list_lock);
+
+        char reply[BUFFER_SIZE];
+        snprintf(reply, BUFFER_SIZE,
+                 "Name '%s' is already in use. Please choose another name\n", newname);
+        udp_socket_write(sd, client_addr, reply, strlen(reply));
+        return;
+    }    
+
     client_info_t *client = find_client_by_addr(client_addr);
     if (client == NULL) {
         perror("client not connected");
