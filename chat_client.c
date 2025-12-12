@@ -41,12 +41,16 @@ typedef struct {
 } listener_args_t;
 
 void redisplay_input() {
+    pthread_mutex_lock(&ui_mutex);
     pthread_mutex_lock(&input_mutex);
+
     printf("\033[%d;1H", ui_get_input_line());
     printf("\033[K");  
     printf("> %s", current_input);
     fflush(stdout);
+
     pthread_mutex_unlock(&input_mutex);
+    pthread_mutex_unlock(&ui_mutex);
 }
 
 void *sender_thread(void *arg)
@@ -118,7 +122,7 @@ void *listener_thread(void *arg)
             redisplay_input();
 
             if (strstr(server_response, "You have disconnected") != NULL ||
-                strstr(server_response, "You have been kicked") != NULL) {
+                strstr(server_response, "You have been removed from the chat") != NULL) {
 
                 printf("Client exiting...\n");
                 exit(0);

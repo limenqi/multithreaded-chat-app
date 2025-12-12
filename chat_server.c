@@ -9,7 +9,7 @@
 #include "shared_structs.h"
 //To compile this file, run "gcc chat_server.c request_handlers.c -o chat_server -lpthread"
 
-#define INACTIVITY_THRESHOLD 300 // 5 minutes
+#define INACTIVITY_THRESHOLD 30 // 5 minutes
 #define PING_TIMEOUT 30 
 
 int udp_socket_open(int port);
@@ -29,7 +29,9 @@ history_buffer_t history = {
 client_info_t *active_head = NULL;
 client_info_t *active_tail = NULL;
 
-static int server_sd = -1;
+typedef struct {
+    int sd;
+} server_threads_args_t;
 
 void pthread_create_w(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)
 {
@@ -53,6 +55,8 @@ void pthread_join_w(pthread_t thread, void **retval)
 static void mark_client_active(struct sockaddr_in *addr)
 {
     time_t now = time(NULL);
+    int notify = 0;
+    struct sockaddr_in addr_copy;
 
     pthread_rwlock_wrlock(&client_list_lock);
 
@@ -62,12 +66,25 @@ static void mark_client_active(struct sockaddr_in *addr)
             cur->addr.sin_addr.s_addr == addr->sin_addr.s_addr) {
 
             cur->last_active = now;
+
+            if (cur->was_pinged) {
+                notify = 1;
+                cur->was_pinged = 0;
+                addr_copy = cur->addr;  // copy safely
+            }
             break;
         }
         cur = cur->next;
     }
 
     pthread_rwlock_unlock(&client_list_lock);
+
+    if (notify) {
+        char msg[] =
+            "[Server]: Activity refreshed. You are still connected.\n";
+        udp_socket_write(udp_socket_open(0), &addr_copy, msg, strlen(msg));
+    }
+
 }
 
 
@@ -82,8 +99,6 @@ static client_info_t *find_least_recently_active_locked(void)
             cur = cur->next;
             continue;
         }        
-
-
 
         if (cur->last_active != 0) {
             if (oldest == NULL || cur->last_active < oldest->last_active) {
@@ -140,51 +155,50 @@ void *service_thread(void *arg){
 }
 
 void *listener_thread(void *arg) {
-        int sd = udp_socket_open(SERVER_PORT);
-        assert(sd > -1);
-        server_sd = sd;
-        // listener thread main loop
-        while (1){ 
-            // Storage for request and response messages
-            char client_request[BUFFER_SIZE];
-            // Variable to store incoming client's IP address and port
-            struct sockaddr_in client_address;
-            int rc = udp_socket_read(sd, &client_address, client_request, BUFFER_SIZE);
-            if (rc > 0){
-                client_request[strcspn(client_request, "\n")] = '\0';
-                char *type = strtok(client_request, "$");
-                char *content = strtok(NULL, "$");
-                if (type == NULL) {
-                    perror("invalid request format");
-                    continue;
-                }
-                if(content==NULL){
-                    content="";
-                }
-                service_args_t *args = malloc(sizeof(service_args_t));
-                args->sd = sd;
-                args->client_addr = client_address;
-                strcpy(args->type, type);
-                strcpy(args->request, content);
-                
-                pthread_t service;
-                pthread_create_w(&service, NULL, service_thread, args);
-                pthread_detach(service);
+    int sd = ((server_threads_args_t *)arg)->sd;
+ 
+    // listener thread main loop
+    while (1){ 
+        // Storage for request and response messages
+        char client_request[BUFFER_SIZE];
+        // Variable to store incoming client's IP address and port
+        struct sockaddr_in client_address;
+        int rc = udp_socket_read(sd, &client_address, client_request, BUFFER_SIZE);
+        if (rc > 0){
+            client_request[strcspn(client_request, "\n")] = '\0';
+            char *type = strtok(client_request, "$");
+            char *content = strtok(NULL, "$");
+            if (type == NULL) {
+                perror("invalid request format");
+                continue;
             }
-        }    
+            if(content==NULL){
+                content="";
+            }
+            service_args_t *args = malloc(sizeof(service_args_t));
+            if (args == NULL) {
+                perror("malloc failed");
+                continue;
+            }
+            args->sd = sd;
+            args->client_addr = client_address;
+            strcpy(args->type, type);
+            strcpy(args->request, content);
+                
+            pthread_t service;
+            pthread_create_w(&service, NULL, service_thread, args);
+            pthread_detach(service);
+        }
+    }    
+    return NULL;
 }
 
 void *monitor_thread(void *arg)
 {
-    (void)arg;
+    int sd = ((server_threads_args_t *)arg)->sd;
 
     while (1) {
         sleep(5); // check every 5 seconds
-
-        // wait until listener has opened the socket
-        if (server_sd < 0) {
-            continue;
-        }
 
         time_t now = time(NULL);
 
@@ -208,11 +222,25 @@ void *monitor_thread(void *arg)
         }
 
         // send ping$ message to the least recently active client
-        const char *ping_msg = "[Server]: You have been inactive. Please send a message or ret-ping$ to stay connected.\n";
+        const char *ping_msg = "[Server]: You have been inactive for 5 minutes. Please send a message or ret-ping$ to stay connected.\n";
         if (ntohs(oldest_addr.sin_port) != ADMIN_PORT) {
-            udp_socket_write(server_sd, &oldest_addr,
-                            (char *)ping_msg, (int)strlen(ping_msg));
+            udp_socket_write(sd, &oldest_addr, (char *)ping_msg, (int)strlen(ping_msg));
         }
+
+        pthread_rwlock_wrlock(&client_list_lock);
+
+        client_info_t *pinged = client_list_head;
+        while (pinged != NULL) {
+            if (ntohs(pinged->addr.sin_port) == ntohs(oldest_addr.sin_port) &&
+                pinged->addr.sin_addr.s_addr == oldest_addr.sin_addr.s_addr) {
+
+                pinged->was_pinged = 1;
+                break;
+            }
+            pinged = pinged->next;
+        }
+
+        pthread_rwlock_unlock(&client_list_lock);
 
         // wait for ret-ping$ response 
         sleep(PING_TIMEOUT);
@@ -238,7 +266,7 @@ void *monitor_thread(void *arg)
         pthread_rwlock_unlock(&client_list_lock);
 
         if (still_same_client) {
-            disconn(server_sd, &oldest_addr);
+            disconn(sd, &oldest_addr);
         }
     }
 
@@ -249,11 +277,16 @@ int main(int argc, char *argv[])
 {
     pthread_rwlock_init (&client_list_lock, NULL);
     
+    int sd = udp_socket_open(SERVER_PORT);
+    assert(sd > -1);
+
+    server_threads_args_t args = { .sd = sd };
+
     pthread_t listener;
     pthread_t monitor;
 
-    pthread_create_w(&listener, NULL, listener_thread, NULL);
-    pthread_create_w(&monitor, NULL, monitor_thread, NULL);
+    pthread_create_w(&listener, NULL, listener_thread, &args);
+    pthread_create_w(&monitor, NULL, monitor_thread, &args);
     
     // This function opens a UDP socket,
     // binding it to all IP interfaces of this machine,

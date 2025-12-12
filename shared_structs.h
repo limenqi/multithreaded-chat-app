@@ -21,6 +21,7 @@ typedef struct client_info {
     mute_target_t *muted;
     struct client_info *next;
     time_t last_active;
+    int was_pinged;
     struct client_info *prev_active;
     struct client_info *next_active;
 } client_info_t;

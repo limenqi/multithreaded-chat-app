@@ -6,6 +6,8 @@
 #include "ui.h"
 #include "shared_structs.h"
 
+pthread_mutex_t ui_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 static int term_rows;
 static int term_cols;
 static int chat_top = 1;
@@ -65,6 +67,7 @@ void ui_draw_chat() {
 }
 
 void ui_print_message(const char *msg) {
+    pthread_mutex_lock(&ui_mutex);
     char clean_msg[BUFFER_SIZE];
     strncpy(clean_msg, msg, BUFFER_SIZE - 1);
     clean_msg[BUFFER_SIZE - 1] = '\0';
@@ -107,6 +110,9 @@ void ui_print_message(const char *msg) {
     }
     
     ui_refresh_input();
+    fflush(stdout);
+
+    pthread_mutex_unlock(&ui_mutex);
 }
 
 void ui_refresh_input() {
